@@ -1,0 +1,7 @@
+next-version: 0.1.1
+mode: ContinuousDeployment
+branches:
+  main:
+    regex: ^main$
+    increment: Patch
+    tag: alpha

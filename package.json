@@ -1,0 +1,46 @@
+{
+  "name": "@leadertechie/kv-auth-synchroniser",
+  "version": "0.0.0",
+  "description": "Asymmetric service-to-service authentication for Cloudflare Workers using KV as the public key registry.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "prepublish": "npm run build",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "auth",
+    "ed25519",
+    "service-to-service",
+    "kv"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vite": "^7.3.1",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^3.0.0",
+    "@cloudflare/workers-types": "^4.20250201.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leadertechie/kv-auth-synchroniser.git"
+  }
+}
