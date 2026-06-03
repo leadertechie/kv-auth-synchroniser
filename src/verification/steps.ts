@@ -4,11 +4,13 @@ import {
   MissingHeaderError, 
   SignatureExpiredError, 
   UnknownCallerError,
-  SignatureMismatchError 
+  SignatureMismatchError,
+  VerificationError 
 } from "../core/errors";
 import { createPayload } from "../core/payload";
 import { base64ToBytes } from "../crypto";
 import type { VerificationStep, VerificationContext } from "./types";
+import type { RegistryEntry } from "../types";
 
 export class HeaderExtractionStep implements VerificationStep {
   readonly name = "extract-headers";
@@ -59,8 +61,42 @@ export class KeyResolutionStep implements VerificationStep {
     const entry = await ctx.registry.getPublicKey(ctx.identity.caller);
     if (!entry) throw new UnknownCallerError(ctx.identity.caller);
 
-    const publicKey = await ctx.algorithm.importPublicKey(base64ToBytes(entry.spki || entry.raw));
+    // Store the full entry for CA verification if needed
+    (ctx as any).registryEntry = entry;
+
+    const publicKey = await ctx.algorithm.importPublicKey(base64ToBytes(entry.document.publicKey));
     return { ...ctx, publicKey };
+  }
+}
+
+export class CATrustStep implements VerificationStep {
+  readonly name = "ca-trust-verification";
+
+  constructor(private readonly caPublicKey: CryptoKey) {}
+
+  async execute(ctx: VerificationContext): Promise<VerificationContext> {
+    const entry = (ctx as any).registryEntry as RegistryEntry;
+    if (!entry) throw new Error("Registry entry not found in context");
+
+    const documentBytes = new TextEncoder().encode(JSON.stringify(entry.document));
+    const signatureBytes = base64ToBytes(entry.signature);
+
+    const isTrusted = await crypto.subtle.verify(
+      { name: "Ed25519" },
+      this.caPublicKey,
+      signatureBytes,
+      documentBytes
+    );
+
+    if (!isTrusted) {
+      throw new VerificationError("Identity document not trusted by CA");
+    }
+
+    if (Date.now() > entry.document.expiresAt) {
+      throw new VerificationError("Identity document has expired");
+    }
+
+    return ctx;
   }
 }
 

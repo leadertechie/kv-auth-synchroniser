@@ -34,9 +34,19 @@ export interface Keypair {
   };
 }
 
-export interface RegistryEntry {
-  raw: string;
-  spki: string;
+export interface IdentityDocument {
+  caller: string;
+  publicKey: string; // SPKI base64
   algorithm: string;
+  issuedAt: number;
+  expiresAt: number;
+}
+
+export interface SignedIdentity {
+  document: IdentityDocument;
+  signature: string; // Signature from the CA
+}
+
+export interface RegistryEntry extends SignedIdentity {
   updated: number;
 }

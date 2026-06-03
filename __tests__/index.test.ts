@@ -33,9 +33,9 @@ describe("KVAuth", () => {
     const pubA = await kv.get("pubkeys/service-a");
     expect(pubA).toBeTruthy();
     const parsedA = JSON.parse(pubA!);
-    expect(parsedA.algorithm).toBe("Ed25519");
-    expect(parsedA.raw).toBeTruthy();
-    expect(parsedA.spki).toBeTruthy();
+    expect(parsedA.document.algorithm).toBe("Ed25519");
+    expect(parsedA.document.publicKey).toBeTruthy();
+    expect(parsedA.signature).toBeDefined();
   });
 
   it("signs a GET request and verifies it correctly", async () => {
