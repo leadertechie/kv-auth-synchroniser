@@ -117,7 +117,7 @@ export class KVAuth {
   async signRequest(
     method: string,
     path: string,
-    options?: { body?: string; userEmail?: string },
+    options?: { body?: string; userEmail?: string; timestamp?: number },
   ): Promise<SignedHeaders> {
     if (!this.privateKey) throw new ConfigurationError("Call init() first");
     this.options.logger?.debug?.("Signing request", { method, path, user: options?.userEmail });
@@ -252,11 +252,12 @@ export async function signRequest(
   await auth.init();
   const headers = await auth.signRequest(method, path, {
     body: options?.body,
-    userEmail: options?.userEmail
+    userEmail: options?.userEmail,
+    timestamp: options?.timestamp
   });
   return {
     signature: headers[HEADERS.SIGNATURE],
-    timestamp: options?.timestamp ?? Date.now()
+    timestamp: parseInt(headers[HEADERS.TIMESTAMP], 10)
   };
 }
 
