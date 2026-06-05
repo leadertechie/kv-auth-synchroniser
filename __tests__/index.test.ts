@@ -114,6 +114,38 @@ describe("KVAuth", () => {
     expect(result.caller).toBeNull();
   });
 
+  it("uses UTC epoch timestamps (Date.now) in X-Toldby-Timestamp", async () => {
+    const headers = await authA.signRequest("GET", "/api/test");
+    const ts = parseInt(headers["X-Toldby-Timestamp"], 10);
+    expect(typeof ts).toBe("number");
+    expect(ts).toBeGreaterThan(1700000000000); // well into 2023+
+    expect(ts).toBeLessThan(2000000000000);    // before 2033
+    expect(new Date(ts).toISOString()).toMatch(/^202[4567]/); // roughly correct year
+  });
+
+  it("allows explicit UTC timestamp override on KVAuth.signRequest", async () => {
+    // The functional signRequest now passes timestamp through correctly
+    const kp = await generateKeypair();
+    const auth = new KVAuth({ privateKey: kp.privateKey, serviceName: "ts-test", kv: new MockKV() as unknown as KVNamespace });
+    await auth.init();
+    await auth.publishPublicKey();
+
+    // Sign with an explicit timestamp
+    const explicitTs = Date.now() - 10000; // 10 seconds ago — within TTL
+    const headers = await auth.signRequest("POST", "/api/data", { body: "test", timestamp: explicitTs });
+    expect(headers["X-Toldby-Timestamp"]).toBe(String(explicitTs));
+
+    // Verify using the same headers (includes the explicit timestamp)
+    const request = new Request("http://localhost/api/data", {
+      method: "POST",
+      headers: headers as Record<string, string>,
+      body: "test",
+    });
+    const result = await auth.verifyRequest(request);
+    expect(result.valid).toBe(true);
+    expect(result.caller).toBe("ts-test");
+  });
+
   it("generates unique keypairs each time", async () => {
     const kp1 = await generateKeypair();
     const kp2 = await generateKeypair();
